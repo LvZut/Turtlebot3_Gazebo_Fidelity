@@ -22,7 +22,7 @@ setup(
         'console_scripts': [
                 'block_drive = sim_fidelity_pkg.block_drive:main',
 		        'block_scan = sim_fidelity_pkg.block_scan:main',
-                'block_test = sim_fidelity_pkg.write_test:main',
+                'block_IMU = sim_fidelity_pkg.block_IMU:main',
         ],
     },
 )
