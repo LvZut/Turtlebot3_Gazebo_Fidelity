@@ -23,6 +23,7 @@ setup(
                 'block_drive = sim_fidelity_pkg.block_drive:main',
 		        'block_scan = sim_fidelity_pkg.block_scan:main',
                 'block_IMU = sim_fidelity_pkg.block_IMU:main',
+                'Odom_Scan_Test = sim_fidelity_pkg.Odom_Scan_Test:main',
         ],
     },
 )

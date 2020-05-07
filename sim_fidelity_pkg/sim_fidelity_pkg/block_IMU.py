@@ -24,10 +24,11 @@ class imu_node(Node):
 
         self.imu_sub = self.create_subscription(Imu, 'imu', self.imu_callback, qos_profile_sensor_data)
         self.rot_pub = self.create_publisher(Twist, 'cmd_vel', 10)
-        self.timer = self.create_timer(0.01, self.timer_callback)
+        self.timer = self.create_timer(0.005, self.timer_callback)
         
-        self.rot_speed = 2.4 # 2.84 max
-        self.cur_speed = 0
+        self.rot_speed = 2.0 # 2.84 max
+        self.cur_speed = 0.0
+        self.rem_thresh = 0.05
         self.vel_msg = Twist()
 
         # Only rotating horizontally (z-axis)
@@ -53,15 +54,13 @@ class imu_node(Node):
 
     def rotate_robot(self):
             self.euler_coords = self.euler_from_quaternion(self.orientation)
-            # print("current rotation: ", (self.euler_coords)[2])
             remainder = max(float((self.euler_coords)[2]) - self.rot_dest, self.rot_dest - float((self.euler_coords)[2]))
 
-            if remainder > 0.1:
+            if remainder > self.rem_thresh:
                 if self.cur_speed < self.rot_speed and remainder > 0.5:
-                    self.cur_speed += 0.001
+                    self.cur_speed += 0.0005
                 elif self.cur_speed > 0.5 and remainder <= 0.5:
-                    self.cur_speed -= 0.001
-                # print("turning speed: ", self.vel_msg.angular.z)
+                    self.cur_speed -= 0.0005
 
                 if self.direction == 1:
                     self.vel_msg.angular.z = self.cur_speed
@@ -72,9 +71,12 @@ class imu_node(Node):
 
             else:
                 print("rotation achieved")
+                self.vel_msg.angular.z = 0.0
+                self.rot_pub.publish(self.vel_msg)
                 self.rot_dest = None
                 self.angular_dest = None
                 self.starting_orientation = None
+                self.rem_thresh = 0.1
 
     def imu_callback(self, data):
         self.orientation = data.orientation
@@ -90,6 +92,10 @@ class imu_node(Node):
         elif self.rot_dest < -math.pi:
             self.rot_dest += 2*math.pi
         print("from %f to %f" % (self.starting_orientation, self.rot_dest))
+
+        # Increase threshold if dest is close to pi
+        if self.rot_dest > 3 or self.rot_dest < -3:
+            self.rem_thresh = 0.1
 
         if self.angular_dest > 0:
             self.direction = 1
