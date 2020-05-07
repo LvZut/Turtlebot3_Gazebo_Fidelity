@@ -26,7 +26,6 @@ class Block_node(Node):
         qos = QoSProfile(depth=10)
         self.odom_sub = self.create_subscription(Odometry, 'odom', self.odom_callback, qos)
         self.scan_sub = self.create_subscription(LaserScan, 'scan', self.scan_callback, qos_profile_sensor_data)
-        self.input_sub = self.create_subscription(Int)
         self.timer = self.create_timer(0.01, self.timer_callback)
         self.front_scan = None
 
