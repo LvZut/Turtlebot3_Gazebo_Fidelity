@@ -6,7 +6,6 @@ from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
-import time
 
 class Block_node(Node):
     def __init__(self):
@@ -57,24 +56,13 @@ class Block_node(Node):
 
         if self.current_distance < self.distance:
 
-            if self.vel_msg.linear.x <= self.max_speed and self.distance - self.current_distance > 0.2:
+            if self.vel_msg.linear.x < self.max_speed and self.distance - self.current_distance > 0.2:
                 # Accelerate
                 self.vel_msg.linear.x += 0.001
             elif self.distance - self.current_distance < 0.4 and self.vel_msg.linear.x > 0.05:
-
-                # Stop odom_measure timer if necessary and not yet done
-                if self.start_time != None and self.end_time == None:
-                    self.end_time = time.time()
-                    self.odom_measure_stop = self.current_position
-
                 # Deccelerate
                 self.vel_msg.linear.x -= 0.001
 
-            # Start timer is max speed is reached
-            else:
-                if self.start_time == None:
-                    self.start_time = time.time()
-                    self.odom_measure_start = self.current_position
 
             #Publish the velocity
             self.velocity_pub.publish(self.vel_msg)
@@ -98,12 +86,6 @@ class Block_node(Node):
             print("Odometry data:\nStarted at %f, %f\nStopped at %f, %f\nDistance: %f" % 
             (self.starting_position[0], self.starting_position[1], self.current_position[0], self.current_position[1],
             (pos_dif[0]**2 + pos_dif[1]**2)**0.5))
-
-            pos_dif_2 = (self.odom_measure_stop[0] - self.odom_measure_start[0], self.odom_measure_stop[1] - self.odom_measure_start[1])
-            distance_2 = (pos_dif_2[0]**2 + pos_dif_2[1]**2)**0.5
-            drive_time = self.end_time - self.start_time
-            print("Speed data:\nDrove %f in %f seconds\nSpeed was %f m/s" % (distance_2, drive_time, distance_2 / drive_time))
-
             self.init_vars()
 
     def init_vars(self):
@@ -119,11 +101,6 @@ class Block_node(Node):
         self.current_distance = 0
         self.distance = -1
         self.initial_scan = None
-
-        self.odom_measure_start = None
-        self.odom_measure_stop = 0.0
-        self.start_time = None
-        self.end_time = None
 
 
 
