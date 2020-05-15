@@ -5,6 +5,7 @@ import os.path
 import numpy as np
 import math
 from rclpy.qos import qos_profile_sensor_data
+import time
 
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Twist
@@ -21,6 +22,7 @@ class imu_node(Node):
         self.rot_dest = None
         self.angular_dest = None
         self.current_rotation = 0
+        self.start_time = None
 
         self.imu_sub = self.create_subscription(Imu, 'imu', self.imu_callback, qos_profile_sensor_data)
         self.rot_pub = self.create_publisher(Twist, 'cmd_vel', 10)
@@ -48,6 +50,7 @@ class imu_node(Node):
             if self.rot_dest == None:
                 rotation = float(input("Input rotation [-180, 180]:"))
                 self.get_destination(rotation)
+                self.start_time = time.time()
             self.rotate_robot()
 
 
@@ -70,6 +73,7 @@ class imu_node(Node):
                 self.rot_pub.publish(self.vel_msg)
 
             else:
+                self.end_time = time.time()
                 print("rotation achieved")
                 self.vel_msg.angular.z = 0.0
                 self.rot_pub.publish(self.vel_msg)
@@ -77,6 +81,9 @@ class imu_node(Node):
                 self.angular_dest = None
                 self.starting_orientation = None
                 self.rem_thresh = 0.1
+                self.drive_time = self.end_time - self.start_time
+                self.get_logger().info("Turned a total of %f seconds" % self.drive_time)
+                self.start_time = None
 
     def imu_callback(self, data):
         self.orientation = data.orientation

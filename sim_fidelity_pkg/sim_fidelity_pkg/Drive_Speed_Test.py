@@ -76,14 +76,14 @@ class Block_node(Node):
 
             #Force the robot to stop
             self.velocity_pub.publish(self.vel_msg)
-            print("Robot has arrived")
+            self.get_logger().info("Robot has arrived")
 
-            # Print info
+            # Output info
             pos_dif = (self.current_position[0] - self.starting_position[0], self.current_position[1] - self.starting_position[1])
 
-            print("Scan data:\nStarted at %f\nStopped at %f\nDistance: %f" % 
+            self.get_logger().info("Scan data:\nStarted at %f\nStopped at %f\nDistance: %f" % 
             (self.initial_scan, self.front_scan, self.initial_scan - self.front_scan))
-            print("Odometry data:\nStarted at %f, %f\nStopped at %f, %f\nDistance: %f" % 
+            self.get_logger().info("Odometry data:\nStarted at %f, %f\nStopped at %f, %f\nDistance: %f" % 
             (self.starting_position[0], self.starting_position[1], self.current_position[0], self.current_position[1],
             (pos_dif[0]**2 + pos_dif[1]**2)**0.5))
             self.init_vars()
