@@ -24,6 +24,7 @@ setup(
 		        'block_scan = sim_fidelity_pkg.block_scan:main',
                 'block_IMU = sim_fidelity_pkg.block_IMU:main',
                 'Odom_Scan_Test = sim_fidelity_pkg.Odom_Scan_Test:main',
+                'odom_log = sim_fidelity_pkg.odom_log:main',
         ],
     },
 )

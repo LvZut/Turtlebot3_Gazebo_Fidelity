@@ -24,9 +24,6 @@ class laser_node(Node):
         self.laser_range270 = None
 
         self.laser_int = None
-        self.laser_int90 = None
-        self.laser_int180 = None
-        self.laser_int270 = None
 
         self.timer = self.create_timer(0.1, self.timer_callback)
 
@@ -39,7 +36,7 @@ class laser_node(Node):
         rel_path = "../logs/"
         self.abs_file_path = os.path.join(script_dir, rel_path) + "laser_log_" + current_time + ".txt"
 
-        self.write("0_degrees, 90_degrees, 180_degrees, 270_degrees")
+        self.write("0_degrees, 90_degrees, 180_degrees, 270_degrees, intensity")
 
     def timer_callback(self):
         if self.laser_range != None:
@@ -53,16 +50,13 @@ class laser_node(Node):
         self.laser_range270 = data.ranges[270]
 
         self.laser_int = data.intensities[0]
-        self.laser_int90 = data.intensities[90]
-        self.laser_int180 = data.intensities[180]
-        self.laser_int270 = data.intensities[270]
-        self.get_logger().info("----------------\n0: %f\n90: %f\n170: %f\n270: %f\n-----------------" % (data.ranges[0], data.ranges[90], data.ranges[180], data.ranges[270]))
-        self.get_logger().info("----------------\n0: %s\n-----------------" % str(set(data.intensities)))
+        self.get_logger().info("----------------\n0: %f\n90: %f\n180: %f\n270: %f\n-----------------" % (data.ranges[0], data.ranges[90], data.ranges[180], data.ranges[270]))
+        self.get_logger().info("----------------\nIntensity @ 0 degrees: %s\n-----------------" % str(data.intensities[0]))
 
     def write_to_file(self):
         # Write scan range to log file with corresponding angle
         # self.get_logger().info("\n Object is %f units in front\n " % self.laser_range)
-        write_list = [self.laser_range90, self.laser_range180, self.laser_range270]
+        write_list = [self.laser_range90, self.laser_range180, self.laser_range270, self.laser_int]
         write_str = "\n" + str(self.laser_range)
         for lr in write_list:
             write_str += ", " + str(lr)
