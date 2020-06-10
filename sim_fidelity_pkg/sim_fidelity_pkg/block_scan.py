@@ -26,6 +26,7 @@ class laser_node(Node):
         self.laser_int = None
 
         self.timer = self.create_timer(0.1, self.timer_callback)
+        self.scan1000 = input("Scan size: ")
 
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")
@@ -40,7 +41,11 @@ class laser_node(Node):
 
     def timer_callback(self):
         if self.laser_range != None:
+            self.scan1000 -= 1
             self.write_to_file()
+
+            if self.scan1000 <= 0:
+                exit()
 
     def scan_callback(self, data):
         # Store scan data in front on callback
