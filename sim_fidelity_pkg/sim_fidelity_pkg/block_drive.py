@@ -51,7 +51,7 @@ class Block_node(Node):
         script_dir = os.path.dirname(__file__)
         rel_path = "../logs/"
         self.abs_file_path = os.path.join(script_dir, rel_path) + "drive_log_" + current_time + ".txt"
-        self.write("max_speed, distance, reverse, acceleration, deceleration, odom_posdif, true_speed, drive_time")
+        self.write("max_speed, distance, reverse, acceleration, deceleration, odom_posdif, lidar_posdif, true_speed, drive_time")
 
         self.init_vars()
 
@@ -126,10 +126,12 @@ class Block_node(Node):
 
             # Output info
             pos_dif = (self.current_position[0] - self.starting_position[0], self.current_position[1] - self.starting_position[1])
+
             self.odom_posdif = (pos_dif[0]**2 + pos_dif[1]**2)**0.5
+            self.lidar_posdif = self.initial_scan - self.front_scan
 
             self.get_logger().info("Scan data:\nStarted at %f\nStopped at %f\nDistance: %f\n" % 
-            (self.initial_scan, self.front_scan, self.initial_scan - self.front_scan))
+            (self.initial_scan, self.front_scan, lidar_posdif))
             self.get_logger().info("Odometry data:\nStarted at %f, %f\nStopped at %f, %f\nDistance: %f\n" % 
             (self.starting_position[0], self.starting_position[1], self.current_position[0], self.current_position[1], self.odom_posdif))
 
@@ -159,6 +161,7 @@ class Block_node(Node):
         self.odom_measure_start = None
         self.odom_measure_stop = None
         self.odom_posdif = None
+        self.lidar_posdif = None
 
         self.start_time = None
         self.end_time = None
@@ -171,7 +174,7 @@ class Block_node(Node):
     def write_to_file(self):
         # Write data to log file
 
-        write_list = [self.distance, self.reverse, self.acceleration, self.deceleration, self.odom_posdif, self.true_speed, self.drive_time]
+        write_list = [self.distance, self.reverse, self.acceleration, self.deceleration, self.odom_posdif, self.lidar_posdif, self.true_speed, self.drive_time]
 
         write_str = "\n" + str(self.max_speed)
         for col in write_list:

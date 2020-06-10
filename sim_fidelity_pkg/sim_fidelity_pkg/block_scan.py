@@ -26,7 +26,7 @@ class laser_node(Node):
         self.laser_int = None
 
         self.timer = self.create_timer(0.1, self.timer_callback)
-        self.scan1000 = input("Scan size: ")
+        self.scan1000 = int(input("Scan size: "))
 
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")
