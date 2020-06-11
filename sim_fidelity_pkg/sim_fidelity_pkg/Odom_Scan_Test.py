@@ -7,6 +7,8 @@ from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 
+import os
+
 class Block_node(Node):
     def __init__(self):
         super().__init__('distance_driver')
@@ -31,6 +33,12 @@ class Block_node(Node):
 
         self.velocity_pub = self.create_publisher(Twist, 'cmd_vel', 10)
 
+        # Setup log file path
+        script_dir = os.path.dirname(__file__)
+        rel_path = "../logs/"
+        self.abs_file_path = os.path.join(script_dir, rel_path) + "drive_log_" + current_time + ".txt"
+        self.write("max_speed, distance, reverse, acceleration, deceleration, odom_posdif, lidar_posdif, true_speed, drive_time")
+
         self.init_vars()
 
     def odom_callback(self, data):
@@ -45,7 +53,8 @@ class Block_node(Node):
 
     def timer_callback(self):
         if self.distance == -1:
-            self.distance = int(input("Input a distance:"))
+            self.distance = float(input("Input a distance:"))
+            self.reverse = bool("Reverse: ")
         if self.starting_position != None:
             self.drive()
 
@@ -101,10 +110,34 @@ class Block_node(Node):
         self.distance = -1
         self.initial_scan = None
 
+    def write_to_file(self):
+        # Write data to log file
+
+        write_list = [self.distance, self.reverse, self.acceleration, self.deceleration, self.odom_posdif, self.lidar_posdif, self.true_speed, self.drive_time]
+
+        write_str = "\n" + str(self.max_speed)
+        for col in write_list:
+            write_str += ", " + str(col)
+        self.write(write_str)
+
+
+    def write(self, msg):
+        with open(self.abs_file_path, 'a') as myFile:
+            myFile.write(msg)
+
+
 
 
 def main(args=None):
     rclpy.init(args=args)
+
+    # Create logs folder if it does not exist yet
+    script_dir = os.path.dirname(__file__)
+    rel_path = "../logs/"
+    abs_file_path = os.path.join(script_dir, rel_path)
+    if not os.path.exists(abs_file_path):
+        os.mkdir(abs_file_path)
+
     node = Block_node()
     rclpy.spin(node)
 

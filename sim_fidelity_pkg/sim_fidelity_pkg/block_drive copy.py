@@ -6,7 +6,7 @@ from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Int32
+from std_msgs.msg import Float64MultiArray
 import time
 
 import numpy as np
@@ -19,12 +19,11 @@ class Block_node(Node):
         super().__init__('distance_driver')
 
         # Speed at which to drive
-        self.max_speed = 0.18
+        self.max_speed = 0.22
         self.acceleration = 0.001
         self.deceleration = 0.0015
         self.reverse = 0
         self.vel_msg = Twist()
-        self.odom_msg = Int32()
 
         # Only driving forward (x-axis)
         self.vel_msg.linear.x = 0.0
@@ -38,9 +37,8 @@ class Block_node(Node):
         qos = QoSProfile(depth=10)
         self.odom_sub = self.create_subscription(Odometry, 'odom', self.odom_callback, qos)
         self.scan_sub = self.create_subscription(LaserScan, 'scan', self.scan_callback, qos_profile_sensor_data)
-        # self.input_sub = self.create_subscription(Float64MultiArray, 'bd_input', self.input_callback, qos)
+        self.input_sub = self.create_subscription(Float64MultiArray, 'bd_input', self.input_callback, qos)
         self.velocity_pub = self.create_publisher(Twist, 'cmd_vel', 10)
-        self.odom_log_pub = self.create_publisher(Int32, 'odom_log_input', 10)
         self.timer = self.create_timer(0.01, self.timer_callback)
         self.front_scan = None
 
@@ -67,18 +65,14 @@ class Block_node(Node):
         if self.initial_scan == None:
             self.initial_scan = self.front_scan
 
-    def timer_callback(self):
-        if self.distance == -1:
-            self.distance = float(input("Input a distance:"))
-            if self.distance < 0:
-                self.reverse = True
-                self.distance = self.distance * -1
-            else:
-                self.reverse = False
+    def input_callback(self, data):
+        self.max_speed = data.data[0]
+        self.distance = data.data[1]
+        self.reverse = data.data[2]
+        self.acceleration = data.data[3]
+        self.deceleration = data.data[4]
 
-            # start logging odometry
-            odom_msg.data = 1
-            self.odom_log_pub.publish(odom_msg)
+    def timer_callback(self):
         if self.starting_position != None and self.distance != -1:
             if self.start_total_time == None:
                 self.start_total_time = time.time()
@@ -91,10 +85,10 @@ class Block_node(Node):
 
         if self.current_distance < self.distance:
 
-            if self.vel_msg.linear.x <= self.max_speed and self.distance - self.current_distance > 0.1:
+            if self.vel_msg.linear.x <= self.max_speed and self.distance - self.current_distance > 0.2:
                 # Accelerate
                 self.vel_msg.linear.x += self.acceleration
-            elif self.distance - self.current_distance < 0.1 and self.vel_msg.linear.x > 0.1:
+            elif self.distance - self.current_distance < 0.4 and self.vel_msg.linear.x > 0.05:
 
                 # Stop odom_measure timer if necessary and not yet done
                 if self.start_time != None and self.end_time == None:
@@ -125,20 +119,16 @@ class Block_node(Node):
             # Robot has arrived
             self.vel_msg.linear.x = 0.0
 
-            # Force the robot to stop
+            #Force the robot to stop
             self.velocity_pub.publish(self.vel_msg)
             self.end_total_time = time.time()
             self.get_logger().info("\nRobot has arrived\n")
-
-            # Stop logging odometry
-            odom_msg.data = 0
-            self.odom_log_pub.publish(odom_msg)
 
             # Output info
             pos_dif = (self.current_position[0] - self.starting_position[0], self.current_position[1] - self.starting_position[1])
 
             self.odom_posdif = (pos_dif[0]**2 + pos_dif[1]**2)**0.5
-            self.lidar_posdif = abs(self.initial_scan - self.front_scan)
+            self.lidar_posdif = self.initial_scan - self.front_scan
 
             self.get_logger().info("Scan data:\nStarted at %f\nStopped at %f\nDistance: %f\n" % 
             (self.initial_scan, self.front_scan, self.lidar_posdif))
