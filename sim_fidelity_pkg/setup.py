@@ -15,16 +15,15 @@ setup(
     zip_safe=True,
     maintainer='louis',
     maintainer_email='louisvincentvanzutphen@gmail.com',
-    description='TODO: Package description',
+    description='This package contains several scripts used for experimenting and testing the Turtlebot3 Burger bot sensors',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-                'block_drive = sim_fidelity_pkg.block_drive:main',
-		        'block_scan = sim_fidelity_pkg.block_scan:main',
-                'block_IMU = sim_fidelity_pkg.block_IMU:main',
-                'Odom_Scan_Test = sim_fidelity_pkg.Odom_Scan_Test:main',
-                'odom_log = sim_fidelity_pkg.odom_log:main',
+                'Odom_Test = sim_fidelity_pkg.Odom_Test:main',
+		        'LiDAR_Test = sim_fidelity_pkg.LiDAR_Test:main',
+                'Gyro_Test = sim_fidelity_pkg.Gyro_Test:main',
+                'Odom_Log = sim_fidelity_pkg.Odom_Log:main',
         ],
     },
 )

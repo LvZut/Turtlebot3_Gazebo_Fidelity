@@ -7,15 +7,17 @@ import os
 import os.path
 from datetime import datetime
 
-# add dependencies and config setup.py
+''' Logs queried amount of LiDAR measurements at 
+    0, 90, 180 and 270 degrees to log file as well 
+    as intensity measurements at 0 degrees. '''
 
 class laser_node(Node):
     def __init__(self):
 
-        # inherit Node properties
+        # Inherit Node properties
         super().__init__('scan_distribution')
 
-        # sub to /scan
+        # Sub to /scan
         self.scan_sub = self.create_subscription(LaserScan, 'scan', self.scan_callback, qos_profile_sensor_data)
 
         self.laser_range = None
@@ -40,6 +42,7 @@ class laser_node(Node):
         self.write("0_degrees, 90_degrees, 180_degrees, 270_degrees, intensity")
 
     def timer_callback(self):
+        # Scan queried amount
         if self.laser_range != None:
             self.scan1000 -= 1
             self.write_to_file()
@@ -60,7 +63,6 @@ class laser_node(Node):
 
     def write_to_file(self):
         # Write scan range to log file with corresponding angle
-        # self.get_logger().info("\n Object is %f units in front\n " % self.laser_range)
         write_list = [self.laser_range90, self.laser_range180, self.laser_range270, self.laser_int]
         write_str = "\n" + str(self.laser_range)
         for lr in write_list:

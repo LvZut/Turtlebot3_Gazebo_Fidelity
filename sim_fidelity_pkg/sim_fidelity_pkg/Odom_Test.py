@@ -14,6 +14,12 @@ import os
 import os.path
 from datetime import datetime
 
+''' Drives robot in a straight line. Queries for distance and speed. 
+    Distance can be negative in order to drive backwards. Maximum
+    speed, distance driven, reverse state, acceleration, deceleration,
+    distance and odometry difference, distance and LiDAR difference,
+    actual calculated speed and execution time are written to log file. '''
+
 class Block_node(Node):
     def __init__(self):
         super().__init__('distance_driver')
@@ -24,7 +30,6 @@ class Block_node(Node):
         self.deceleration = 0.0015
         self.reverse = 0
         self.vel_msg = Twist()
-        self.odom_msg = Int32()
 
         # Only driving forward (x-axis)
         self.vel_msg.linear.x = 0.0
@@ -38,9 +43,7 @@ class Block_node(Node):
         qos = QoSProfile(depth=10)
         self.odom_sub = self.create_subscription(Odometry, 'odom', self.odom_callback, qos)
         self.scan_sub = self.create_subscription(LaserScan, 'scan', self.scan_callback, qos_profile_sensor_data)
-        # self.input_sub = self.create_subscription(Float64MultiArray, 'bd_input', self.input_callback, qos)
         self.velocity_pub = self.create_publisher(Twist, 'cmd_vel', 10)
-        self.odom_log_pub = self.create_publisher(Int32, 'odom_log_input', 10)
         self.timer = self.create_timer(0.01, self.timer_callback)
         self.front_scan = None
 
@@ -50,9 +53,9 @@ class Block_node(Node):
         self.get_logger().info("Current Time = %s" % current_time)
 
         # Setup log file path
-        script_dir = os.path.dirname(__file__)
-        rel_path = "../logs/"
-        self.abs_file_path = os.path.join(script_dir, rel_path) + "drive_log_" + current_time + ".txt"
+        self.script_dir = os.path.dirname(__file__)
+        self.rel_path = "../logs/"
+        self.abs_file_path = os.path.join(self.script_dir, self.rel_path) + "drive_log_" + current_time + ".txt"
         self.write("max_speed, distance, reverse, acceleration, deceleration, odom_posdif, lidar_posdif, true_speed, drive_time")
 
         self.init_vars()
@@ -70,15 +73,16 @@ class Block_node(Node):
     def timer_callback(self):
         if self.distance == -1:
             self.distance = float(input("Input a distance:"))
+            self.distance = 1
+            self.max_speed = float(input("Input a speed:"))
             if self.distance < 0:
                 self.reverse = True
                 self.distance = self.distance * -1
             else:
                 self.reverse = False
 
-            # start logging odometry
-            odom_msg.data = 1
-            self.odom_log_pub.publish(odom_msg)
+            # setup odometry log
+            self.setup_odom()
         if self.starting_position != None and self.distance != -1:
             if self.start_total_time == None:
                 self.start_total_time = time.time()
@@ -121,6 +125,8 @@ class Block_node(Node):
             # Update distance travelled
             pos_dif = (self.current_position[0] - self.starting_position[0], self.current_position[1] - self.starting_position[1])
             self.current_distance = (pos_dif[0]**2 + pos_dif[1]**2)**0.5
+
+            self.odom_write_to_file()
         else:
             # Robot has arrived
             self.vel_msg.linear.x = 0.0
@@ -130,9 +136,7 @@ class Block_node(Node):
             self.end_total_time = time.time()
             self.get_logger().info("\nRobot has arrived\n")
 
-            # Stop logging odometry
-            odom_msg.data = 0
-            self.odom_log_pub.publish(odom_msg)
+            self.odom_write_to_file()
 
             # Output info
             pos_dif = (self.current_position[0] - self.starting_position[0], self.current_position[1] - self.starting_position[1])
@@ -181,9 +185,9 @@ class Block_node(Node):
         self.end_total_time = None
         self.drive_time = None
 
+
     def write_to_file(self):
         # Write data to log file
-
         write_list = [self.distance, self.reverse, self.acceleration, self.deceleration, self.odom_posdif, self.lidar_posdif, self.true_speed, self.drive_time]
 
         write_str = "\n" + str(self.max_speed)
@@ -192,9 +196,31 @@ class Block_node(Node):
         self.write(write_str)
 
 
-    def write(self, msg):
-        with open(self.abs_file_path, 'a') as myFile:
-            myFile.write(msg)
+    def write(self, msg, odom=False):
+        if not odom:
+            with open(self.abs_file_path, 'a') as myFile:
+                myFile.write(msg)
+        else:
+            with open(self.odom_abs_file_path, 'a') as myFile:
+                myFile.write(msg)
+
+    def setup_odom(self):
+        odom_now = datetime.now()
+        odom_current_time = odom_now.strftime("%H:%M:%S")
+
+        # Setup log file path
+        self.odom_abs_file_path = os.path.join(self.script_dir, self.rel_path) + "odom_log_" + odom_current_time + "_" + str(self.max_speed) + ".txt"
+
+
+        # Write column names
+        self.write("x, y, z", odom=True)
+
+
+    def odom_write_to_file(self):
+        # Write odom data to log file
+        self.get_logger().info("Position X %f, Y %f" % self.current_position)
+        write_str = "\n" + str(self.current_position[0]) + ", " + str(self.current_position[1])
+        self.write(write_str, odom=True)
 
 def main(args=None):
     rclpy.init(args=args)

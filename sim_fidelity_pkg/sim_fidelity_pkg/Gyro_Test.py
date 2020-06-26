@@ -10,6 +10,8 @@ import time
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Twist
 
+''' Turns the robot a given amount of degrees.
+    Uses gyroscope in order to measure angle. '''
 
 class imu_node(Node):
     def __init__(self):
@@ -42,7 +44,7 @@ class imu_node(Node):
         self.vel_msg.angular.z = 0.0
         
         
-        print("everything is set up")
+        print("Variables initialised.")
 
 
     def timer_callback(self):
@@ -75,11 +77,13 @@ class imu_node(Node):
             else:
                 self.end_time = time.time()
                 print("rotation achieved")
+                self.cur_speed = 0
                 self.vel_msg.angular.z = 0.0
                 self.rot_pub.publish(self.vel_msg)
                 self.rot_dest = None
                 self.angular_dest = None
                 self.starting_orientation = None
+                self.orientation = None
                 self.rem_thresh = 0.1
                 self.drive_time = self.end_time - self.start_time
                 self.get_logger().info("Turned a total of %f seconds" % self.drive_time)
